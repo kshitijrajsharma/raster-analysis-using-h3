@@ -29,19 +29,29 @@ wget http://download.geofabrik.de/asia/nepal-latest.osm.pbf
 Lets apply some preprocessing to data before actual h3 cell calculations
 We will be using [gdal](https://gdal.org/index.html)  commandline program for this step. [Install gdal](https://gdal.org/download.html) in your machine 
 
+
+
 ### Conversion to Cloud Optimized Geotiff
 If you are unaware of cog , Checkout here : https://www.cogeo.org/ 
 
-Check if gdal_translate is available 
+- Check if gdal_translate is available 
 ```shell
 gdal_translate --version
 ```
 It should print the gdal version you are using 
-Now lets convert tif to cloud optimized geotif
-```shell
-gdal_translate -of COG esri-settlement-area-kathmandu-grid.tif esri-landcover-cog.tif
+
+- Reproject raster to 4326
+
+Your raster might have different source srs , change it accordingly 
 ```
-It took less than a minute to convert that tiff to geotiff , However the downloaded tiff was already on cog format . ( Do this process if you have normal geotif ) 
+gdalwarp esri-settlement-area-kathmandu-grid.tif esri-landcover-4326.tif -s_srs EPSG:32645 -t_srs EPSG:4326
+```
+
+- Now lets convert tif to cloud optimized geotif
+```shell
+gdal_translate -of COG esri-landcover-4326.tif esri-landcover-cog.tif
+```
+It took approx a minute to convert reprojected tiff to geotiff
 
 ### Insert osm data to postgresql table 
 
@@ -54,7 +64,7 @@ osm2pgsql took 274s (4m 34s) overall.
 
 You can use geojson files also if you have any using ogr2ogr 
 ```shell
-ogr2ogr -f PostgreSQL  PG:"dbname=postgres user=postgres password=postgres" buildings_polygons_geojson.geojson -nln npl_buildings
+ogr2ogr -f PostgreSQL  PG:"dbname=postgres user=postgres password=postgres" buildings_polygons_geojson.geojson -nln buildings
 ```
 ogro2gr has wide range of support for [drivers](https://gdal.org/drivers/vector/index.html) so you are pretty flexible about what your input is  . Output is Postgresql table 
 
@@ -71,7 +81,7 @@ Create extension in your db
 create extension h3;
 create extension h3_postgis CASCADE;
 ```
-Now lets get the buildings table
+Now lets create the buildings table
 ```
 CREATE TABLE buildings (
   id SERIAL PRIMARY KEY,

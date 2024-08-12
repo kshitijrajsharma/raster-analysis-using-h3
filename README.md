@@ -326,3 +326,8 @@ This is the visualization I did on h3 indexes based on their cell_value in QGIS
 <img width="995" alt="image" src="https://github.com/user-attachments/assets/e058651b-9102-4bd7-847b-21b3bc3a4ba9">
 
 
+
+### References : 
+- https://blog.rustprooflabs.com/2022/04/postgis-h3-intro 
+- https://jsonsingh.com/blog/uber-h3/
+- https://h3ronpy.readthedocs.io/en/latest/

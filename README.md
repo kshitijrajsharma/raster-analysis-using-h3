@@ -189,6 +189,10 @@ Query Plan :
 
 This can further be enhanced if added index on h3_ix column of buildings
 
+```sql
+create index on buildings(h3_ix);
+```
+
 When shooting count : there were 24416 buildings in my area with built class classified as from ESRI
 
 ### Verification
@@ -272,7 +276,7 @@ drop table osm2pgsql_properties;
 
 To visualize the tiles lets quickly build vector tiles using [pg_tileserv](https://github.com/CrunchyData/pg_tileserv?tab=readme-ov-file)
 
-- Download
+- Download pg_tileserv
   Download from above provided link or use docker
 - Export credentials
 ```shell

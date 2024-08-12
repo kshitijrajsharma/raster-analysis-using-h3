@@ -224,6 +224,39 @@ FROM buildings bl
 JOIN t1 ON bl.h3_ix = t1.h3_ix;
 ```
 
+Lets get h3 cells too 
+```sql
+with t1 as (
+  SELECT *, h3_cell_to_boundary_geometry(h3_ix)
+  FROM esri_landcover el
+  WHERE h3_ix = ANY (
+    get_h3_indexes(
+      ST_GeomFromGeoJSON('{
+        "coordinates": [
+          [
+            [83.72922006065477, 28.395029869336483],
+            [83.72922006065477, 28.037312312532066],
+            [84.2367635433626, 28.037312312532066],
+            [84.2367635433626, 28.395029869336483],
+            [83.72922006065477, 28.395029869336483]
+          ]
+        ],
+        "type": "Polygon"
+      }'), 8
+    )
+  ) AND cell_value = 7
+)
+SELECT jsonb_build_object(
+  'type', 'FeatureCollection',
+  'features', jsonb_agg(ST_AsGeoJSON(t1.*)::jsonb)
+)
+FROM t1
+```
+
+<img width="893" alt="image" src="https://github.com/user-attachments/assets/c1889d79-c49e-4661-95d5-631ff147b15b">
+
+Accuracy can be increased after increasing h3 resolution
+
 ## Cleanup 
 
 Drop the tables we don't need 

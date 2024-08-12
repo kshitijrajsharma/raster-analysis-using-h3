@@ -322,5 +322,6 @@ USING GIST (geometry);
 <img width="1344" alt="image" src="https://github.com/user-attachments/assets/de0a7993-b2c9-42b8-950e-b41c5c88c642">
 
 - Now you can visualize those MVT tiles based on tiles value or any way you want eg : [maplibre](https://maplibre.org/martin/using-with-maplibre.html) ! You can also visualize the processed result or combine with other datasets
+<img width="995" alt="image" src="https://github.com/user-attachments/assets/e058651b-9102-4bd7-847b-21b3bc3a4ba9">
 
 

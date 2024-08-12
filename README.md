@@ -1,5 +1,5 @@
 # raster-using-h3
-Raster analysis with ease using h3 indexes
+Hi , in this blog we will talk about how we can do Raster analysis with ease using h3 indexes. 
 
 
 ## Objective 
@@ -255,7 +255,7 @@ FROM t1
 
 <img width="893" alt="image" src="https://github.com/user-attachments/assets/c1889d79-c49e-4661-95d5-631ff147b15b">
 
-Accuracy can be increased after increasing h3 resolution
+Accuracy can be increased after increasing h3 resolution and also will depend on input and resampling technique
 
 ## Cleanup 
 

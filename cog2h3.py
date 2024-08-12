@@ -1,14 +1,15 @@
 ## Copyright @ Kshitij Raj Sharma 2024
 ## Note : Input cog should be in wgs 1984 if not reproject the raster
+# gdalwarp -t_srs EPSG:4326 my-cog.tif my-cog-4326.tif
 
 ## Convert your tiff to cog using gdal (https://gdal.org/drivers/raster/cog.html#raster-cog)
 # gdal_translate -of COG input.tif output_cog.tif
 
 ## Install
-# pip install h3 h3ronpy rasterio asyncio asyncpg
+# pip install h3 h3ronpy rasterio asyncio asyncpg aiohttp
 
 ## Usage
-# python cog2h3.py --cog /static/my-cog.tif --table cog_h3 --res 8
+# python cog2h3.py --cog my-cog.tif --table cog_h3 --res 8
 
 import argparse
 import asyncio
@@ -32,6 +33,23 @@ logging.basicConfig(
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
+resampling_methods = [
+    "nearest",
+    "bilinear",
+    "cubic",
+    "cubic_spline",
+    "lanczos",
+    "average",
+    "mode",
+    "gauss",
+    "max",
+    "min",
+    "med",
+    "q1",
+    "q3",
+    "sum",
+    "rms",
+]
 ## setup static dir for cog
 STATIC_DIR = os.getenv("STATIC_DIR", "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -155,7 +173,7 @@ def get_edge_length(res, unit="km"):
         raise ValueError("Invalid unit. Use 'km' for kilometers or 'm' for meters.")
 
 
-async def process_raster(cog_url: str, table_name: str, h3_res):
+async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: str):
     """Resamples and generates h3 value for raster"""
     cog_file_path = await download_cog(cog_url)
     raster_time = time.time()
@@ -171,6 +189,13 @@ async def process_raster(cog_url: str, table_name: str, h3_res):
         )
         logging.info(f"Determined Min fitting H3 resolution: {native_h3_res}")
 
+        if h3_res > native_h3_res:
+            logging.warn(
+                f"Supplied  res {h3_res} is higher than native resolution , Upscaling raster is not supported yet , hence falling back to {native_h3_res}"
+            )
+            ## Todo : Do raster upscaling here
+            h3_res = native_h3_res
+
         if h3_res < native_h3_res:
             ### if required h3 resolution is smaller than native h3 , lets resample the raster to smaller which will avoid aggregation in vector analysis and would be faster + efficient
             logging.info(
@@ -184,7 +209,7 @@ async def process_raster(cog_url: str, table_name: str, h3_res):
                     int(src.height * scale_factor),
                     int(src.width * scale_factor),
                 ),
-                resampling=Resampling.nearest,
+                resampling=Resampling[sample_by],
             )
             transform = src.transform * src.transform.scale(
                 (src.width / data.shape[-1]), (src.height / data.shape[-2])
@@ -218,7 +243,7 @@ async def process_raster(cog_url: str, table_name: str, h3_res):
             transform,
             native_h3_res,
             nodata_value=None,
-            compact=True,
+            compact=False,
         )
         ## now convert these uint8 value to h3 hex strings
         grayscale_h3_df = convert_h3_indices_arrow(grayscale_h3_df)
@@ -245,12 +270,19 @@ def main():
     parser.add_argument(
         "--table", type=str, required=True, help="Name of the database table"
     )
-    parser.add_argument("--res", type=int, help="H3 resolution level")
+    parser.add_argument("--res", type=int, default=8, help="H3 resolution level")
 
+    parser.add_argument(
+        "--sample_by",
+        type=str,
+        default="nearest",
+        choices=resampling_methods,
+        help="Raster Resampling Method",
+    )
     args = parser.parse_args()
 
     logging.info("Starting processing")
-    asyncio.run(process_raster(args.cog, args.table, args.res))
+    asyncio.run(process_raster(args.cog, args.table, args.res, args.sample_by))
     logging.info("Processing completed")
 
 

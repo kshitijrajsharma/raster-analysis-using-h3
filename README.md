@@ -1,4 +1,4 @@
-# raster-using-h3
+# Raster Analysis Using h3 Grid and Postgresql
 Hi , in this blog we will talk about how we can do Raster analysis with ease using h3 indexes. 
 
 

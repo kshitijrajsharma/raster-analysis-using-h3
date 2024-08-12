@@ -118,9 +118,9 @@ Make sure reprojected cog is in static/
 mv esri-landcover-cog.tif ./static/
 ```
 
-Run script provided in repo to create h3 cells from raster 
+Run script provided in repo to create h3 cells from raster . I am resampling by mode method : This depends upon type of data you have . For categorical data mode fits better. Learn more about resampling methods [here](https://rasterio.readthedocs.io/en/latest/api/rasterio.enums.html#rasterio.enums.Resampling) 
 ```shell
-python cog2h3.py --cog esri-landcover-cog.tif --table esri_landcover --res 8
+python cog2h3.py --cog esri-landcover-cog.tif --table esri_landcover --res 8 --sample_by mode
 ```
 Log : 
 ```log

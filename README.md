@@ -305,9 +305,8 @@ USING GIST (geometry);
   ```shell
   ./pg_tileserv
   ```
-<img width="1423" alt="image" src="https://github.com/user-attachments/assets/d28e2b7a-d9e3-46f6-8b2c-2adff1496d2a">
+<img width="1344" alt="image" src="https://github.com/user-attachments/assets/de0a7993-b2c9-42b8-950e-b41c5c88c642">
 
-
-
+- Now you can visualize those MVT tiles based on tiles value or any way you want eg : [maplibre](https://maplibre.org/martin/using-with-maplibre.html) ! You can also visualize the processed result or combine with other datasets
 
 

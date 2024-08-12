@@ -1,4 +1,4 @@
-<img width="1301" alt="image" src="https://github.com/user-attachments/assets/4b5f6b3c-2e50-4e8e-b27c-8b0139e2b961"># raster-using-h3
+# raster-using-h3
 Hi , in this blog we will talk about how we can do Raster analysis with ease using h3 indexes. 
 
 

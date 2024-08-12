@@ -1,4 +1,4 @@
-# raster-using-h3
+<img width="1301" alt="image" src="https://github.com/user-attachments/assets/4b5f6b3c-2e50-4e8e-b27c-8b0139e2b961"># raster-using-h3
 Hi , in this blog we will talk about how we can do Raster analysis with ease using h3 indexes. 
 
 
@@ -267,6 +267,45 @@ drop table planet_osm_polygon;
 drop table planet_osm_roads;
 drop table osm2pgsql_properties;
 ```
+
+## Optional - Vector Tiles 
+
+To visualize the tiles lets quickly build vector tiles using [pg_tileserv](https://github.com/CrunchyData/pg_tileserv?tab=readme-ov-file)
+
+- Download
+  Download from above provided link or use docker
+- Export credentials
+```shell
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+```
+
+- Grant our table select permission
+
+```sql
+GRANT SELECT ON buildings to postgres;
+GRANT SELECT ON esri_landcover to postgres;
+```
+
+- Lets create geometry on h3 indexes for visualization ( You can do this directly from query if you are building tiles from [st_asmvt](https://postgis.net/docs/ST_AsMVT.html) manually)
+  
+```sql
+ALTER TABLE esri_landcover 
+ADD COLUMN geometry geometry(Polygon, 4326) 
+GENERATED ALWAYS AS (h3_cell_to_boundary_geometry(h3_ix)) STORED;
+```
+
+- Create index on that h3 geom to visualize it effectively 
+```sql
+CREATE INDEX idx_esri_landcover_geometry 
+ON esri_landcover 
+USING GIST (geometry);
+```
+
+- Run
+  ```shell
+  ./pg_tileserv
+  ```
+<img width="1423" alt="image" src="https://github.com/user-attachments/assets/d28e2b7a-d9e3-46f6-8b2c-2adff1496d2a">
 
 
 

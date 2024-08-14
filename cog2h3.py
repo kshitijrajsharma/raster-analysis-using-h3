@@ -6,7 +6,7 @@
 # gdal_translate -of COG input.tif output_cog.tif
 
 ## Install
-# pip install h3 h3ronpy rasterio asyncio asyncpg aiohttp
+# pip install h3 h3ronpy rasterio asyncio asyncpg aiohttp pandas
 
 ## Usage
 # python cog2h3.py --cog my-cog.tif --table cog_h3 --res 8
@@ -21,7 +21,7 @@ import aiohttp
 import asyncpg
 import h3
 import numpy as np
-import pyarrow as pa
+import pandas as pd
 import rasterio
 from h3ronpy.arrow.raster import nearest_h3_resolution, raster_to_dataframe
 from rasterio.enums import Resampling
@@ -86,8 +86,9 @@ async def download_cog(cog_url: str) -> str:
                 return file_path
 
 
-async def create_or_replace_table_arrow(table: pa.Table, table_name: str, db_url: str):
-    """Inserts vector h3 data to database"""
+async def create_or_replace_table_pandas(
+    df: pd.DataFrame, table_name: str, db_url: str
+):
     logging.info(f"Creating or replacing table {table_name} in database")
     start_time = time.time()
 
@@ -103,14 +104,14 @@ async def create_or_replace_table_arrow(table: pa.Table, table_name: str, db_url
     """
     )
 
-    h3_index_column = table.column("h3_ix").chunks
-    value_column = table.column("value").chunks
+    h3_indexes = df["h3_ix"].tolist()
+    values = df["value"].tolist()
 
-    for h3_chunk, value_chunk in zip(h3_index_column, value_column):
-        h3_indexes = list(zip(h3_chunk.to_pylist(), value_chunk.to_pylist()))
-        await conn.executemany(
-            f"INSERT INTO {table_name} (h3_ix, cell_value) VALUES ($1, $2)", h3_indexes
-        )
+    h3_index_value_pairs = list(zip(h3_indexes, values))
+    await conn.executemany(
+        f"INSERT INTO {table_name} (h3_ix, cell_value) VALUES ($1, $2)",
+        h3_index_value_pairs,
+    )
 
     await conn.close()
 
@@ -120,22 +121,13 @@ async def create_or_replace_table_arrow(table: pa.Table, table_name: str, db_url
     )
 
 
-def convert_h3_indices_arrow(table: pa.Table) -> pa.Table:
-    """Convert h3 python inter uint8 indices to hex strings"""
-
+def convert_h3_indices_pandas(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert H3 indices to hex strings in a streaming manner to handle large datasets."""
     logging.info("Converting H3 indices to hex strings")
+    df["h3_ix"] = df["cell"].apply(h3.h3_to_string)
+    df = df.drop(columns=["cell"])
 
-    h3_indices_column = table.column("cell")
-
-    converted_chunks = [
-        pa.array([h3.h3_to_string(x) for x in chunk.to_pylist()])
-        for chunk in h3_indices_column.chunks
-    ]
-
-    new_columns = table.remove_column(table.schema.get_field_index("cell"))
-    new_columns = new_columns.append_column("h3_ix", pa.chunked_array(converted_chunks))
-
-    return new_columns
+    return df
 
 
 def get_edge_length(res, unit="km"):
@@ -243,14 +235,18 @@ async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: 
             transform,
             native_h3_res,
             nodata_value=None,
-            compact=False,
+            compact=True,
         )
+        logging.info("Calculation of h3 indexes on {native_h3_res} is Done")
         ## now convert these uint8 value to h3 hex strings
-        grayscale_h3_df = convert_h3_indices_arrow(grayscale_h3_df)
+        grayscale_h3_df_pandas = grayscale_h3_df.to_pandas()
+        grayscale_h3_df = convert_h3_indices_pandas(grayscale_h3_df_pandas)
         logging.info(
-            f"Raster calculation done in {int(time.time()-raster_time)} seconds"
+            f"Overall raster calculation done in {int(time.time()-raster_time)} seconds"
         )
-        await create_or_replace_table_arrow(grayscale_h3_df, table_name, DATABASE_URL)
+        await create_or_replace_table_pandas(
+            grayscale_h3_df_pandas, table_name, DATABASE_URL
+        )
 
     # with rasterio.open("resampled.tif", "w", **profile) as dataset:
     #     dataset.write(data)

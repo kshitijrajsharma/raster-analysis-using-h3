@@ -119,7 +119,7 @@ ALTER TABLE buildings ADD COLUMN h3_index h3index GENERATED ALWAYS AS (h3_lat_ln
 Install 
 
 ```shell
-pip install h3 h3ronpy rasterio asyncio asyncpg aiohttp
+pip install h3 h3ronpy rasterio asyncio asyncpg aiohttp pandas
 ```
 
 Make sure reprojected cog is in static/

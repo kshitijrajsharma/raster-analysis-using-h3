@@ -63,7 +63,7 @@ It took approx a minute to convert reprojected tiff to geotiff
 We are using [osm2pgsql](https://osm2pgsql.org/doc/install.html) to insert osm data to our table 
 & downloaded pbf from [geofabrik](http://www.geofabrik.de/)
 ```shell
-osm2pgsql --create nepal-latest.osm.pbf -U postgres
+osm2pgsql --create nepal-latest.osm.pbf -U postgres -E 4326
 ```
 osm2pgsql took 274s (4m 34s) overall.
 

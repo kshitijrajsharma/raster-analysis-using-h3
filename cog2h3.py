@@ -1,6 +1,8 @@
 ## Copyright @ Kshitij Raj Sharma 2024
 ## Note : Input cog should be in wgs 1984 if not reproject the raster
-# gdalwarp -t_srs EPSG:4326 my-cog.tif my-cog-4326.tif
+# gdalwarp -overwrite input.tif output.tif -s_srs EPSG:32645 -t_srs EPSG:4326
+
+## IMP :: make sure while using gdalwarp you have placed nodata to value 0 , you can use it using this argument in gdalwarp -dstnodata 0
 
 ## Convert your tiff to cog using gdal (https://gdal.org/drivers/raster/cog.html#raster-cog)
 # gdal_translate -of COG input.tif output_cog.tif
@@ -25,6 +27,9 @@ import pandas as pd
 import rasterio
 from h3ronpy.arrow.raster import nearest_h3_resolution, raster_to_dataframe
 from rasterio.enums import Resampling
+from rasterio.windows import get_data_window
+from rasterio.windows import transform as trfs
+from sklearn.preprocessing import MinMaxScaler
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -165,7 +170,9 @@ def get_edge_length(res, unit="km"):
         raise ValueError("Invalid unit. Use 'km' for kilometers or 'm' for meters.")
 
 
-async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: str):
+async def process_raster(
+    cog_url: str, table_name: str, h3_res: int, sample_by: str, preserve_range: bool
+):
     """Resamples and generates h3 value for raster"""
     cog_file_path = await download_cog(cog_url)
     raster_time = time.time()
@@ -175,6 +182,8 @@ async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: 
         grayscale = src.read(1)
         transform = src.transform
         # profile = src.profile.copy()
+        min_value = np.min(grayscale)
+        max_value = np.max(grayscale)
 
         native_h3_res = nearest_h3_resolution(
             grayscale.shape, src.transform, search_mode="smaller_than_pixel"
@@ -209,11 +218,12 @@ async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: 
 
             grayscale = data[0]
             logging.info("Resampling Done")
-            nodata_value = src.nodata
-            if (
-                nodata_value is not None
-            ):  # Replace nodata value to 0 ( avoids unusual color numbers in h3 cells)
-                grayscale = np.where(grayscale == nodata_value, 0, grayscale)
+
+            if preserve_range:
+                scaler = MinMaxScaler(feature_range=(min_value, max_value))
+                grayscale = scaler.fit_transform(grayscale.reshape(-1, 1)).reshape(
+                    grayscale.shape
+                )
 
             native_h3_res = nearest_h3_resolution(
                 grayscale.shape, transform, search_mode="smaller_than_pixel"
@@ -234,8 +244,8 @@ async def process_raster(cog_url: str, table_name: str, h3_res: int, sample_by: 
             grayscale,
             transform,
             native_h3_res,
-            nodata_value=None,
-            compact=True,
+            nodata_value=0,
+            compact=False,
         )
         logging.info("Calculation of h3 indexes on {native_h3_res} is Done")
         ## now convert these uint8 value to h3 hex strings
@@ -267,18 +277,27 @@ def main():
         "--table", type=str, required=True, help="Name of the database table"
     )
     parser.add_argument("--res", type=int, default=8, help="H3 resolution level")
-
+    parser.add_argument(
+        "--preserve_range",
+        action="store_true",
+        help="Preserve range of raster while resampling",
+    )
     parser.add_argument(
         "--sample_by",
         type=str,
-        default="nearest",
+        default="bilinear",
         choices=resampling_methods,
         help="Raster Resampling Method",
     )
+
     args = parser.parse_args()
 
     logging.info("Starting processing")
-    asyncio.run(process_raster(args.cog, args.table, args.res, args.sample_by))
+    asyncio.run(
+        process_raster(
+            args.cog, args.table, args.res, args.sample_by, args.preserve_range
+        )
+    )
     logging.info("Processing completed")
 
 

@@ -44,7 +44,12 @@ It should print the gdal version you are using
 
 Your raster might have different source srs , change it accordingly 
 ```
-gdalwarp esri-settlement-area-kathmandu-grid.tif esri-landcover-4326.tif -s_srs EPSG:32645 -t_srs EPSG:4326
+gdalwarp -overwrite esri-settlement-area-kathmandu-grid.tif esri-landcover-4326.tif -s_srs EPSG:32645 -t_srs EPSG:4326
+```
+
+Important : Incase your raster also has nodata , We need to convert it to 0 using -dstnodata 0 to make sure our h3 cells are not being built on nodata area
+```
+gdalwarp -overwrite esri-settlement-area-kathmandu-grid.tif esri-landcover-4326.tif -s_srs EPSG:32645 -t_srs EPSG:4326 -dstnodata 0
 ```
 
 - Now lets convert tif to cloud optimized geotif

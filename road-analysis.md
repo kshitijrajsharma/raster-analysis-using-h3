@@ -24,13 +24,7 @@ Logs Summary
 2024-09-06 23:53:56  osm2pgsql took 837s (13m 57s) overall.
 ```
 
-Drop unneccesary tables 
-```sql
-drop table planet_osm_line;
-drop table planet_osm_point;
-drop table planet_osm_polygon;
-drop table osm2pgsql_properties;
-```
+
 Create `roads` table 
 ```sql
 create table roads 
@@ -38,6 +32,16 @@ as (
 select name , highway , way as geometry
 from planet_osm_roads);
 ```
+
+Drop unneccesary tables 
+```sql
+drop table planet_osm_line;
+drop table planet_osm_point;
+drop table planet_osm_polygon;
+drop table osm2pgsql_properties;
+drop table planet_osm_roads;
+```
+
 Create index on roads geom 
 ```sql
 create index on roads(geometry);

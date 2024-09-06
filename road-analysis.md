@@ -160,8 +160,8 @@ ADD COLUMN flood5yr FLOAT;
 Update the flood5yr column 
 ```sql
 UPDATE roads
-SET flood5yr = f.cell_value
-FROM flood5yr f
+SET flood5yr = f.band1
+FROM yr5flood f
 WHERE roads.h3_ix = f.h3_ix;
 ```
 

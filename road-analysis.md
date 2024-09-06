@@ -53,6 +53,30 @@ ALTER TABLE roads ADD COLUMN h3_ix h3index GENERATED ALWAYS AS (h3_lat_lng_to_ce
 ```
 Using centroid might not always be ideal for line features , you might consider using array of h3 indexes to be stored 
 
+if you want to store h3cell for all points you can use this function 
+```sql
+CREATE OR REPLACE FUNCTION get_h3_cells_for_linestring(
+    geom geometry,
+    h3_resolution integer
+)
+RETURNS h3index[] AS $$
+DECLARE
+    h3_indexes h3index[];
+    point geometry;
+BEGIN
+    h3_indexes := ARRAY[]::h3index[];
+
+    FOR point IN
+        SELECT (ST_DumpPoints(geom)).geom
+    LOOP
+        h3_indexes := array_append(h3_indexes, h3_lat_lng_to_cell(point, h3_resolution));
+    END LOOP;
+
+    RETURN h3_indexes;
+END;
+$$ LANGUAGE plpgsql;
+```
+
 Generate tiles for roads 
 ```bash
 ogr2ogr -f MVT roads PG:"user=admin dbname=postgres password=admin" "roads" -t_srs EPSG:3857 -dsco COMPRESS=NO -dsco MAXZOOM=16 -progress

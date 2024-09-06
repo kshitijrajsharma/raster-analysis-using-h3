@@ -149,3 +149,21 @@ ogr2ogr -f MVT yr5flood PG:"user=admin password=admin" "yr5flood" -t_srs EPSG:38
 This tile generation part will take some time as it will generate the static tile for all geomtry at once , however this can made dymaic with the generating tiles on request from fastAPI on future
 
 
+## Analysis 
+
+lets get flood5yr data on roads dataset 
+```sql
+ALTER TABLE roads
+ADD COLUMN flood5yr FLOAT;
+```
+
+Update the flood5yr column 
+```sql
+UPDATE roads
+SET flood5yr = f.cell_value
+FROM flood5yr f
+WHERE roads.h3_ix = f.h3_ix;
+```
+
+
+

@@ -10,7 +10,48 @@
 ## Process OSM Data 
 
 ```bash
-osm2pgsql --create nepal-latest.osm.pbf -U postgres -E 4326
+osm2pgsql --create nepal-latest.osm.pbf -U admin -W -d postgres -E 4326
+```
+Logs Summary
+```log
+2024-09-06 23:39:59  osm2pgsql version 1.11.0
+2024-09-06 23:39:59  Database version: 14.13 (Homebrew)
+2024-09-06 23:39:59  PostGIS version: 3.4
+2024-09-06 23:51:06  Analyzing table 'planet_osm_polygon'...
+2024-09-06 23:53:55  All postprocessing on table 'planet_osm_polygon' done in 708s (11m 48s).
+2024-09-06 23:53:55  All postprocessing on table 'planet_osm_roads' done in 9s.
+2024-09-06 23:53:55  Storing properties to table '"public"."osm2pgsql_properties"'.
+2024-09-06 23:53:56  osm2pgsql took 837s (13m 57s) overall.
+```
+
+Drop unneccesary tables 
+```sql
+drop table planet_osm_line;
+drop table planet_osm_point;
+drop table planet_osm_polygon;
+drop table osm2pgsql_properties;
+```
+Create `roads` table 
+```sql
+create table roads 
+as ( 
+select name , highway , way as geometry
+from planet_osm_roads);
+```
+Create index on roads geom 
+```sql
+create index on roads(geometry);
+```
+
+Generate h3 index for roads 
+```sql
+ALTER TABLE roads ADD COLUMN h3_ix h3index GENERATED ALWAYS AS (h3_lat_lng_to_cell(ST_Centroid(geometry), 8)) STORED;
+```
+Using centroid might not always be ideal for line features , you might consider using array of h3 indexes to be stored 
+
+Generate tiles for roads 
+```bash
+ogr2ogr -f MVT roads PG:"user=admin dbname=postgres password=admin" "roads" -t_srs EPSG:3857 -dsco COMPRESS=NO -dsco MAXZOOM=16 -progress
 ```
 
 ### Lets only extract roads from OSM data 
@@ -95,6 +136,7 @@ create index on yr5flood(geometry);
 ```
 
 Visualize in QGIS : 
+<img width="1430" alt="image" src="https://github.com/user-attachments/assets/de07b4c0-3d87-4022-b570-306dc3090f50">
 
 
 ### Tile generation

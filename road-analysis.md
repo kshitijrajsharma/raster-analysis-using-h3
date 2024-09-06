@@ -58,10 +58,7 @@ Generate tiles for roads
 ogr2ogr -f MVT roads PG:"user=admin dbname=postgres password=admin" "roads" -t_srs EPSG:3857 -dsco COMPRESS=NO -dsco MAXZOOM=16 -progress
 ```
 
-### Lets only extract roads from OSM data 
-```sql 
-road data extraction sql 
-```
+
 
 ## Process flood5yr data 
 Find preprocessing automation .sh [here](https://github.com/kshitijrajsharma/cog2h3/blob/main/pre.sh) :

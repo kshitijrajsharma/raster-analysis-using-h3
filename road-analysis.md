@@ -197,7 +197,7 @@ FROM yr5flood f
 WHERE roads.h3_ix = f.h3_ix;
 ```
 
-Lets get affected road part and its length in meters 
+Lets get affected road part by flood5yr extent its length in meters, location and exact part
 ```sql 
 with t1 as (
 select h3_ix ,band1
@@ -208,7 +208,7 @@ select * , st_intersection(r.geometry,h3_cell_to_boundary_geometry(t1.h3_ix)) as
 from roads r , t1 
 where t1.h3_ix = ANY(r.h3_ix_array) and r.highway  is not null
 ) 
-select t2.geometry as road_actual_geometry , t2.affected_road, t2.highway , t2.name ,  t2.band1 as flood5yr, ST_Length(t2.affected_road::geography) as affected_road_length_m
+select t2.geometry as road_actual_geometry , t2.affected_road as geometry, t2.highway , t2.name ,  t2.band1 as flood5yr, ST_Length(t2.affected_road::geography) as affected_road_length_m
 from t2
 ```
 

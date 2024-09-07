@@ -212,6 +212,6 @@ select t2.geometry as road_actual_geometry , t2.affected_road as geometry, t2.hi
 from t2
 ```
 
-
+<img width="936" alt="image" src="https://github.com/user-attachments/assets/273eef9b-6c98-4736-a979-f9b878d227f7">
 
 

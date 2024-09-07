@@ -67,14 +67,22 @@ BEGIN
     h3_indexes := ARRAY[]::h3index[];
 
     FOR point IN
-        SELECT (ST_DumpPoints(geom)).geom
+        SELECT (ST_DumpPoints(ST_LineMerge(geom))).geom
     LOOP
         h3_indexes := array_append(h3_indexes, h3_lat_lng_to_cell(point, h3_resolution));
     END LOOP;
 
-    RETURN h3_indexes;
+    RETURN array_agg(DISTINCT h3_indexes);
 END;
 $$ LANGUAGE plpgsql;
+```
+
+In array h3 index case to generate list of h3indexes
+```sql
+ALTER TABLE roads ADD COLUMN h3_ix_array h3index[];
+
+UPDATE roads
+SET h3_ix_array = get_h3_cells_for_linestring(geometry, 8);
 ```
 
 Generate tiles for roads 
@@ -121,7 +129,7 @@ export DATABASE_URL="postgresql://admin:admin@localhost:5432/postgres"
 Run 
 
 ```bash
-cog2h3 --cog 5yr_flood_extent_cog_preprocessed.tif --table yr5flood --res 15
+cog2h3 --cog 5yr_flood_extent_cog_preprocessed.tif --table yr5flood --res 8
 ```
 Here we are using max res 15 , however script will determine the minimum fitting res and process the data 
 ```log
@@ -137,7 +145,7 @@ Here we are using max res 15 , however script will determine the minimum fitting
 2024-09-06 23:09:09,346 - INFO - Table yr5flood created or updated successfully in 20.35 seconds.
 2024-09-06 23:09:09,649 - INFO - Processing completed
 ```
-Here our min fitting resolution is 10 so we will work on 10 for simplicity.
+Here our min fitting resolution is 10, for proeuction 10 is recommended . To create simplicity on this workshop  we will work on 8.
 
 ### Post Process
 
